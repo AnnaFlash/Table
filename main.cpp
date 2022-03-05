@@ -279,10 +279,6 @@ namespace {
 
     void TestPrint() {
         auto sheet = CreateSheet();
-        /*sheet->SetCell("A1"_pos, "=B3");
-        sheet->GetPrintableSize();*/
-
-
         sheet->SetCell("A2"_pos, "meow");
         sheet->SetCell("B2"_pos, "=35");
 
@@ -295,6 +291,9 @@ namespace {
         std::ostringstream values;
         sheet->PrintValues(values);
         ASSERT_EQUAL(values.str(), "\t\nmeow\t35\n");
+
+        sheet->ClearCell("B2"_pos);
+        ASSERT_EQUAL(sheet->GetPrintableSize(), (Size{ 2, 1 }));
     }
 
     void TestCellReferences() {
@@ -341,7 +340,6 @@ namespace {
 
     void TestCellCircularReferences() {
         auto sheet = CreateSheet();
-       // sheet->SetCell("A1"_pos, "=A1");
         sheet->SetCell("E2"_pos, "=E4");
         sheet->SetCell("E4"_pos, "=X9");
         sheet->SetCell("X9"_pos, "=M6");
@@ -361,30 +359,28 @@ namespace {
 }  // namespace
 
 int main() {
-     TestRunner tr;
-    RUN_TEST(tr, TestPositionAndStringConversion);
-    RUN_TEST(tr, TestPositionToStringInvalid);
-    RUN_TEST(tr, TestStringToPositionInvalid);
-    RUN_TEST(tr, TestEmpty);
-    RUN_TEST(tr, TestInvalidPosition);
-    RUN_TEST(tr, TestSetCellPlainText);
-    RUN_TEST(tr, TestClearCell);
-    RUN_TEST(tr, TestFormulaArithmetic);
-    RUN_TEST(tr, TestFormulaReferences);
-    RUN_TEST(tr, TestFormulaExpressionFormatting);
-    RUN_TEST(tr, TestFormulaReferencedCells);
-    RUN_TEST(tr, TestErrorValue);
-    RUN_TEST(tr, TestErrorDiv0);
-    RUN_TEST(tr, TestEmptyCellTreatedAsZero);
-    RUN_TEST(tr, TestFormulaInvalidPosition);
-    RUN_TEST(tr, TestPrint);
-    RUN_TEST(tr, TestCellReferences);
-    RUN_TEST(tr, TestFormulaIncorrect);
-    RUN_TEST(tr, TestCellCircularReferences);
+    // TestRunner tr;
+    //RUN_TEST(tr, TestPositionAndStringConversion);
+    //RUN_TEST(tr, TestPositionToStringInvalid);
+    //RUN_TEST(tr, TestStringToPositionInvalid);
+    //RUN_TEST(tr, TestEmpty);
+    //RUN_TEST(tr, TestInvalidPosition);
+    //RUN_TEST(tr, TestSetCellPlainText);
+    //RUN_TEST(tr, TestClearCell);
+    //RUN_TEST(tr, TestFormulaArithmetic);
+    //RUN_TEST(tr, TestFormulaReferences);
+    //RUN_TEST(tr, TestFormulaExpressionFormatting);
+    //RUN_TEST(tr, TestFormulaReferencedCells);
+    //RUN_TEST(tr, TestErrorValue);
+    //RUN_TEST(tr, TestErrorDiv0);
+    //RUN_TEST(tr, TestEmptyCellTreatedAsZero);
+    //RUN_TEST(tr, TestFormulaInvalidPosition);
+    //RUN_TEST(tr, TestPrint);
+    //RUN_TEST(tr, TestCellReferences);
+    //RUN_TEST(tr, TestFormulaIncorrect);
+    //RUN_TEST(tr, TestCellCircularReferences);
 
     auto sheet = CreateSheet();
-    sheet->SetCell("A1"_pos, "=1/0");
-   std::cout << "GetValue(A1): " << sheet->GetCell("A1"_pos)->GetValue() << std::endl;
     //sheet->SetCell("A1"_pos, "=B2+C3");
     //std::cout << "GetValue(A1): " << sheet->GetCell("A1"_pos)->GetValue() << std::endl;
     //std::cout << "GetValue(B2): " << sheet->GetCell("B2"_pos)->GetValue() << std::endl;
@@ -406,5 +402,28 @@ int main() {
     //sheet->PrintTexts(std::cout);
     //std::cout << "PrintValues(): " << std::endl;
     //sheet->PrintValues(std::cout);
+
+    sheet->SetCell("A1"_pos, "=(1+2)*3");
+    sheet->SetCell("A2"_pos, "some");
+    sheet->SetCell("B1"_pos, "=1+(2*3)");
+    sheet->SetCell("B2"_pos, "text");
+    sheet->SetCell("B5"_pos, "=1/0");
+    sheet->SetCell("C2"_pos, "here");
+    sheet->SetCell("C3"_pos, "'and");
+    sheet->SetCell("D3"_pos, "'here");
+
+    std::cout << sheet->GetPrintableSize();
+    std::cout << "\n\n";
+    sheet->PrintTexts(std::cout);
+    std::cout << "\n\n";
+    sheet->PrintValues(std::cout);
+    std::cout << "\n\n";
+    sheet->ClearCell("B5"_pos);
+    std::cout << sheet->GetPrintableSize();
+    std::cout << "\n\n";
+    sheet->PrintTexts(std::cout);
+    std::cout << "\n\n";
+    sheet->PrintValues(std::cout);
+    std::cout << "\n\n";
     return 0;
 }

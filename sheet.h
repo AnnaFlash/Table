@@ -26,5 +26,5 @@ public:
 
 private:
     // Можете дополнить ваш класс нужными полями и методами
-    std::vector<std::vector<std::unique_ptr<CellInterface>>> sheet_;
+    std::map<Position, std::unique_ptr<CellInterface>> sheet1_;
 };

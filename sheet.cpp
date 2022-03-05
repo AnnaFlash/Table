@@ -14,26 +14,15 @@ Sheet::~Sheet() {}
 
 void Sheet::SetCell(Position pos, std::string text) {
     if (pos.IsValid()) {
-        if (static_cast<int>(sheet_.size()) > pos.row) {
-            if (static_cast<int>(sheet_[pos.row].size()) > pos.col) {
-                if (sheet_[pos.row][pos.col].get() == nullptr) {
-                    sheet_[pos.row][pos.col] = std::make_unique<Cell>(*this);
-                }
-                sheet_[pos.row][pos.col]->Set(text, pos);
+        if (sheet1_.count(pos)) {
+            if (sheet1_.at(pos).get() == nullptr) {
+                sheet1_[pos] = std::make_unique<Cell>(*this);
             }
-            else {
-                sheet_[pos.row].resize(pos.col + 1);
-                if (sheet_[pos.row][pos.col].get() == nullptr) {
-                    sheet_[pos.row][pos.col] = std::make_unique<Cell>(*this);
-                }
-                sheet_[pos.row][pos.col]->Set(text, pos);
-            }
+            sheet1_[pos]->Set(text, pos);
         }
         else {
-            sheet_.resize(pos.row + 1);
-            sheet_[pos.row].resize(pos.col + 1);
-            sheet_[pos.row][pos.col] = std::make_unique<Cell>(*this);
-            sheet_[pos.row][pos.col]->Set(text, pos);
+            sheet1_[pos] = std::make_unique<Cell>(*this);
+            sheet1_[pos]->Set(text, pos);
         }
     }
     else {
@@ -43,13 +32,8 @@ void Sheet::SetCell(Position pos, std::string text) {
 
 const CellInterface* Sheet::GetCell(Position pos) const {
     if (pos.IsValid()) {
-        if (static_cast<int>(sheet_.size()) > pos.row) {
-            if (static_cast<int>(sheet_[pos.row].size()) > pos.col) {
-                return sheet_[pos.row][pos.col].get();
-            }
-            else {
-                return nullptr;
-            }
+        if (sheet1_.count(pos)) {
+            return sheet1_.at(pos).get();
         }
         else {
             return nullptr;
@@ -61,13 +45,8 @@ const CellInterface* Sheet::GetCell(Position pos) const {
 }
 CellInterface* Sheet::GetCell(Position pos) {
     if (pos.IsValid()) {
-        if (static_cast<int>(sheet_.size()) > pos.row) {
-            if (static_cast<int>(sheet_[pos.row].size()) > pos.col) {
-                return sheet_[pos.row][pos.col].get();
-            }
-            else {
-                return nullptr;
-            }
+        if (sheet1_.count(pos)) {
+            return sheet1_[pos].get();
         }
         else {
             return nullptr;
@@ -91,70 +70,30 @@ bool Sheet::CheckRow(std::vector<std::unique_ptr<CellInterface>>& row) const {
 
 void Sheet::ClearCell(Position pos) {
     if (pos.IsValid()) {
-        if (static_cast<int>(sheet_.size()) > pos.row) {
-            if (static_cast<int>(sheet_[pos.row].size()) > pos.col) {
-                sheet_[pos.row][pos.col].release();
-                sheet_[pos.row].erase(sheet_[pos.row].begin() + pos.col);
-            }
+        if (sheet1_.count(pos)) {
+            sheet1_[pos].release();
+            sheet1_.erase(pos);
         }
     }
     else {
         throw InvalidPositionException("");
     }
-    std::vector<bool> check_rows(sheet_.size());
-    for (size_t i = 0; i < sheet_.size(); i++) {
-        check_rows[i] = CheckRow(sheet_[i]);
-    }
-    for (int i = check_rows.size() - 1; i >= 0; i--) {
-        if (check_rows[i] == false) {
-            break;
-        }
-        sheet_.erase(sheet_.begin() + i);
-    }
 }
 
 Size Sheet::GetPrintableSize() const {
-   /* Size result;
-    std::vector<bool> check_rows;
-    for (size_t i = 0; i < sheet_.size(); i++) {
-        if (sheet_[i].empty()) {
-            { check_rows.push_back(false); }
-        }
-        else {
-            bool check = false;
-            for (auto& r : sheet_[i]) {
-                r.get() != nullptr ? check = true : check;
-            }
-            check_rows.push_back(check); 
-        }
-    }
-    for (int i = check_rows.size(); i > 0; i--) {
-        if (check_rows[i - 1]) {
-            result.rows = i;
-            break;
-        }
-    }
-    result.cols = 0;
-    for (int i = 0; i < sheet_.size(); i++) {
-        int col = 0;
-        for (int j = 0; j < sheet_[i].size(); j++) {
-            if (GetCell(Position{ i, j })) {
-                if (sheet_[i][j]->GetText() != "") {
-                    col = j + 1;
-                }
-            }
-        }
-        if (result.cols < col) {
-            result.cols = col;
-        }
-    }
-    return result;*/
     Size result;
-    result.cols = 0;
-    for (size_t i = 0; i < sheet_.size(); i++) {
-        result.cols < static_cast<int>(sheet_[i].size()) ? result.cols = static_cast<int>(sheet_[i].size()) : result.cols;
+    if (sheet1_.empty()) {
+        result.cols = 0;
+        result.rows = 0;
+        return result;
     }
-    result.rows = static_cast<int>(sheet_.size());
+    auto it = --sheet1_.end();
+    result.rows =((it)->first).row + 1;
+    result.cols = 0;
+    for (const auto& cell : sheet1_) {
+        result.cols < cell.first.col ? result.cols = cell.first.col : result.cols;
+    }
+    result.cols++;
     return result;
 }
 
@@ -175,12 +114,13 @@ void Sheet::PrintValues(std::ostream& output) const {
     Size size_ = GetPrintableSize();
     for (int i = 0; i < size_.rows; i++) {
         for (int j = 0; j < size_.cols; j++) {
-            if (GetCell(Position{ i, j })) {
+            Position pos = { i, j };
+            if (GetCell(pos)) {
                 if (j == size_.cols - 1) {
-                    PrintValue(output, GetCell(Position{ i, j }));
+                    PrintValue(output, GetCell(pos));
                 }
                 else {
-                    PrintValue(output, GetCell(Position{ i, j }));
+                    PrintValue(output, GetCell(pos));
                     output << "\t";
                 }
             }
@@ -197,12 +137,13 @@ void Sheet::PrintTexts(std::ostream& output) const {
     Size size_ = GetPrintableSize();
     for (int i = 0; i < size_.rows; i++) {
         for (int j = 0; j < size_.cols; j++) {
-            if (GetCell(Position{ i, j })) {
+            Position pos = { i, j };
+            if (GetCell(pos)) {
                 if (j == size_.cols - 1) {
-                    output << sheet_[i][j]->GetText();
+                    output << sheet1_.at(pos)->GetText();
                 }
                 else {
-                    output << sheet_[i][j]->GetText() << "\t";
+                    output << sheet1_.at(pos)->GetText() << "\t";
                 }
             }
             else {

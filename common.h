@@ -10,6 +10,7 @@
 #include <optional>
 #include <unordered_set>
 #include <cmath>
+#include <map>
 // Позиция ячейки. Индексация с нуля.
 struct Position {
     int row = 0;
@@ -98,8 +99,8 @@ public:
     virtual Value GetValue() const = 0;
     virtual std::string GetText() const = 0;
     virtual std::vector<Position> GetCells() const = 0;
-    virtual void ClearCash() = 0;
-    virtual bool CheckCash() const = 0;
+    virtual void ClearCache() = 0;
+    virtual bool CheckCache() const = 0;
 };
 
 class CellInterface {
@@ -123,8 +124,8 @@ public:
 
     virtual void dfs(std::unordered_set<Impl*>& used, const Position& pos) = 0;
 
-    virtual void InvalidCash() = 0;
-    virtual bool CheckCash() const = 0;
+    virtual void InvalidateCache() = 0;
+    virtual bool CheckCache() const = 0;
     // Возвращает список ячеек, которые непосредственно задействованы в данной
     // формуле. Список отсортирован по возрастанию и не содержит повторяющихся
     // ячеек. В случае текстовой ячейки список пуст.

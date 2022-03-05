@@ -31,8 +31,8 @@ public:
 
     bool CheckCycles(std::unique_ptr<Impl> impl_to_check, const Position& pos_to_check);
     void dfs(std::unordered_set<Impl*>& used, const Position& pos);
-    void InvalidCash();
-    bool CheckCash() const;
+    void InvalidateCache();
+    bool CheckCache() const;
 private:
     class EmptyImpl : public Impl {
     public:
@@ -44,8 +44,8 @@ private:
             std::string s;
             return s;
         }
-        void ClearCash() override {}
-        bool CheckCash() const override {
+        void ClearCache() override {}
+        bool CheckCache() const override {
             return false;
         }
         std::vector<Position> GetCells() const { return {}; }
@@ -68,8 +68,8 @@ private:
             return text_;
         }
         std::vector<Position> GetCells() const { return {}; }
-        void ClearCash() override {}
-        bool CheckCash() const override {
+        void ClearCache() override {}
+        bool CheckCache() const override {
             return false;
         }
     private:
@@ -80,18 +80,18 @@ private:
         using Value = std::variant<std::string, double, FormulaError>;
         FormulaImpl(std::string expr, const  SheetInterface& sheet) : formula_(std::move(ParseFormula(expr))), sheet_(sheet) {}
         Value GetValue() const override {
-            if (!cash_.has_value()) {
+            if (!cache_.has_value()) {
                 auto res = formula_->Evaluate(sheet_);
                 if (std::holds_alternative<double>(res)) {
-                    cash_ = std::get<double>(res);
-                    return cash_.value();
+                    cache_ = std::get<double>(res);
+                    return cache_.value();
                 }
                 else {
                     return std::get<FormulaError>(res);
                 }
             }
             else {
-                return cash_.value();
+                return cache_.value();
             }
         }
         std::string GetText() const override {
@@ -100,16 +100,16 @@ private:
             return result;
         }
         std::vector<Position> GetCells() const { return formula_->GetReferencedCells(); }
-        void ClearCash() {
-            cash_.reset();
+        void ClearCache() {
+            cache_.reset();
         }
-        bool CheckCash() const {
-            return cash_.has_value();
+        bool CheckCache() const {
+            return cache_.has_value();
         }
     private:
         std::unique_ptr<FormulaInterface> formula_;
         const  SheetInterface& sheet_;
-        mutable std::optional<double> cash_;
+        mutable std::optional<double> cache_;
     };
     Sheet& sheet_;
     std::unique_ptr<Impl> impl_;

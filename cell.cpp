@@ -14,6 +14,7 @@ Cell::~Cell() {}
 void Cell::Set(std::string text, const Position& pos_to_check) {
 	if (text.empty()) {
 		impl_ = std::make_unique<EmptyImpl>();
+		SetEdges();
 	}
 	else if (text[0] == '=' && text.size() > 1) {
 		text.erase(0, 1);
@@ -21,11 +22,12 @@ void Cell::Set(std::string text, const Position& pos_to_check) {
 		if (CheckCycles(std::move(impl_to_check), pos_to_check)) {
 			impl_ = std::make_unique<FormulaImpl>(text, sheet_);
 			SetEdges();
-			InvalidCash();
+			InvalidateCache();
 		}
 	}
 	else {
 		impl_ = std::make_unique<TextImpl>(text);
+		SetEdges();
 	}
 }
 void Cell::SetEdges() {
@@ -70,6 +72,9 @@ std::vector<Position> Cell::GetReferencedCells() const
 
 bool Cell::IsReferenced() const
 {
+	if (!edges_.out_.empty()) {
+		return true;
+	}
 	return false;
 }
 
@@ -106,14 +111,14 @@ void Cell::dfs(std::unordered_set<Impl*>& used, const Position& pos) {
 	}
 }
 
-bool Cell::CheckCash() const {
-	return impl_->CheckCash();
+bool Cell::CheckCache() const {
+	return impl_->CheckCache();
 }
-void Cell::InvalidCash() {
-	impl_->ClearCash();
+void Cell::InvalidateCache() {
+	impl_->ClearCache();
 	for (auto& out_refernces : edges_.out_) {
-		if (out_refernces->CheckCash()) {
-			out_refernces->InvalidCash();
+		if (out_refernces->CheckCache()) {
+			out_refernces->InvalidateCache();
 		}
 	}
 }
